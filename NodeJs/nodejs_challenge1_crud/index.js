@@ -1,87 +1,92 @@
-//Express dependencies
-// Query params = ?teste=1
-// Route params = /users/1
-// Request body = {"name": "Debony", "email":"debony@gmail.com"} 
-//localhold: 3000/teste
-
-// CRUD - Create, Read, Update, Delete
-
-const express = require('express'); //nome da dependecia
+const express = require('express');
 const server = express();
-const users = ['Debony', 'Antonia','Arnaldo'];
+let requests = 0;
+const projects = [];
 
 server.use(express.json());
 
-//MIDDLEWARE Global
-server.use((req, res, next) => {
-  console.time('Request');
-  console.log(`Método: ${req.method}; URL: ${req.url}`);
+//MIDDLEWARE - Local
+
+function checkProject (req,res,next) {
+  const id = req.params;
+  const project = projects.find(p => p.id == id);
   
-  next();
-
-  console.timeEnd('Request');
-})
-
-//MIDDLEWARE Local
-
-function checkUserExists(req, res, next) {
-  if (!req.body.name) {
-    return res.status(400).json({ error: 'Users is required' });
+  if (!project) {
+    return res.status(400).json({error: 'This project does not exists'});
   }
 
   return next();
 }
 
-function checkUserInArray (req, res, next) {
-  const user = users[req.params.index];
+//MIDDLEWARE - GLOBAL
 
-  if (!user) {
-    return res.status(400).json({ error: 'User does not exsist!' });
-  }
+function numberOfRequests(req,res,next) {
+  requests = requests + 1;
 
-  req.user = user;
+  console.log(`Requests: ${requests}`);
 
   return next();
 }
+//GET
 
-//GET - Read
-server.get('/users', checkUserInArray, (req, res) => {
-  return res.json(users);
+server.get('/projects', numberOfRequests, (req,res) => {
+  return res.json(projects);
 })
 
-server.get('/users/:index', checkUserInArray, (req,res) => {
-  return res.json(req.user);
-})
+//POST
+server.post('/projects', numberOfRequests,(req,res) => {
+  const { id } = req.body;
+  const { title } = req.body;
+  const { task } = req.body;
 
-//POST - Create
+  const project = {
+    id,
+    title,
+    tasks: []
+  };
 
-server.post('/users', checkUserExists, (req,res) => {
-  const { name } = req.body;
+  projects.push(project);
 
-  users.push(name);
-
-  return res.json(users);
-})
-
-//PUT - Update
-
-server.put('/users/:index', checkUserExists, checkUserInArray,  (req,res) => {
-  const { index } = req.params;
-  const { name } = req.body;
-
-  users[index] = name;
-
-  return res.json(users);
+  return res.json(projects);
 })
 
 
-//Delete - delete 
+//PUT
 
-server.delete('/users/:index', checkUserInArray, (req,res) => {
-  const { index } = req.params;
+server.put('/projects/:id', numberOfRequests, checkProject, (req,res) => {
+  const { id } = req.params;
+  const { title } = req.body;
 
-  users.splice(index, 1);
+  const project = projects.find(p => p.id == id);
+
+  project.title = title;
+
+  return res.json(projects);
+
+})
+
+//DELETE
+server.delete('/projects/:id', numberOfRequests, checkProject, (req, res) => {
+  const { id } = req.params;
+
+  const index = projects.findIndex(p => p.id == id);
+  
+  projects.splice(index, 1);
 
   return res.send();
 })
+
+//POST - TASK
+
+server.post('/projects/:id/tasks', numberOfRequests, checkProject, (req,res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+
+  const project = projects.find(p => p.id == id);
+
+  project.tasks.push(title);
+
+  return res.json(projects);
+})
+
 server.listen(3000);
