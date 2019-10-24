@@ -9,7 +9,6 @@ routes.get('/', async (req, res) => {
     email: 'debony_13_@hotmail.com',
     password_hash: '1234556',
   });
-  
   return res.json(user);
 });
 
