@@ -1,7 +1,12 @@
+import * as Yup from 'yup';
 import User from '../models/User';
 
 class UserController {
   async store(req, res) {
+    const schema = Yup.object().shape({
+      name: Yup.string().required().
+    });
+
     const userExists = await User.findOne({ where: { email: req.body.email }});
 
     if (userExists) {
